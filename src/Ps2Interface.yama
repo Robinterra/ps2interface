@@ -1,0 +1,239 @@
+namespace "Ps2"
+{
+    using "System";
+    using "System.IO";
+    using "ARM.CortexM";
+    using "ARM.CortexM.Advanced";
+
+    public class Ps2InterfaceClient
+    {
+
+        // -----------------------------------------------
+
+        #region get/set
+
+        // -----------------------------------------------
+
+        private GpioPin clock_input;
+        private GpioPin data_input;
+
+        private GpioPin clock_output;
+        private GpioPin data_output;
+
+        private ResetAndClockControl rcc;
+
+        // -----------------------------------------------
+
+        #endregion get/set
+
+        // -----------------------------------------------
+
+        #region ctor
+
+        // -----------------------------------------------
+
+        public this new ( GpioPin clock_input, GpioPin data_input, GpioPin clock_output, GpioPin data_output, ResetAndClockControl rcc )
+        {
+            this.clock_input = clock_input;
+            this.data_input = data_input;
+            this.clock_output = clock_output;
+            this.data_output = data_output;
+            this.rcc = rcc;
+
+            return this;
+        }
+
+        // -----------------------------------------------
+
+        #endregion ctor
+
+        // -----------------------------------------------
+
+        #region methods
+
+        // -----------------------------------------------
+
+        public bool IsRequestToSendFromHost (  )
+        {
+            bool isok = this.clock_input.Read (  ) as bool;
+            if (!isok) return false;
+
+            isok = this.data_input.Read (  ) as bool;
+            return !isok;
+        }
+
+        // -----------------------------------------------
+
+        public bool InitialState (  )
+        {
+            this.clock_output.Write ( PinValue.Low );
+            this.data_output.Write ( PinValue.Low );
+
+            return this.clock_input.Read (  );
+        }
+
+        // -----------------------------------------------
+
+        public bool BusyNow (  )
+        {
+            this.data_output.Write ( PinValue.Low );
+            this.clock_output.Write ( PinValue.High );
+        }
+
+        // -----------------------------------------------
+
+        public int Receive (  )
+        {
+            bool isok = this.clock_input.Read (  ) as bool;
+            if ( !isok ) return false;
+
+            isok = this.data_input.Read (  ) as bool;
+            if ( isok ) return false;
+
+            int result = 0;
+            int currentParity = 1;
+
+            isok = this.TaktLow (  );
+            if (!isok) return false;
+
+            for (int position = 0; position < 8; position = position + 1)
+            {
+                int oneBit = this.ReceiveOneBit (  );
+                if (oneBit & 0x2) return false;
+
+                if (oneBit)
+                {
+                    if (currentParity) { currentParity = 0 }
+                    else { currentParity = 1 }
+                }
+
+                result = result | (oneBit << position);
+            }
+
+            int parity = this.ReceiveOneBit (  );
+            if (parity & 0x2) return false;
+
+            isok = this.TaktHigh (  );
+            if (!isok) return false;
+
+            this.clock_output.Write ( 1 );
+
+            this.data_output.Write ( 1 );
+
+            this.rcc.WaitInMicroSeconds ( 20 );
+
+            this.InitialState (  );
+
+            if (parity != currentParity) return 0x100;
+
+            return result;
+        }
+
+        // -----------------------------------------------
+
+        private bool TaktLow (  )
+        {
+            bool isok = this.clock_input.Read (  ) as bool;
+            if ( !isok ) return false;
+
+            this.rcc.WaitInMicroSeconds ( 160 );
+
+            this.clock_output.Write ( 1 );
+
+            this.rcc.WaitInMicroSeconds ( 160 );
+
+            return true;
+        }
+
+        // -----------------------------------------------
+
+        private bool TaktHigh (  )
+        {
+            this.rcc.WaitInMicroSeconds ( 160 );
+
+            this.clock_output.Write ( 0 );
+
+            this.rcc.WaitInMicroSeconds ( 160 );
+
+            this.clock_input.Read (  );
+        }
+
+        // -----------------------------------------------
+
+        private int ReceiveOneBit (  )
+        {
+            bool isok = this.TaktHigh (  );
+            if (!isok) return 2;
+
+            int result = this.data_input.Read (  );
+
+            isok = this.TaktLow (  );
+            if (!isok) return 2;
+
+            return result;
+        }
+
+        // -----------------------------------------------
+
+        private bool TransmissionOneBit ( int oneBit )
+        {
+            bool isok = this.TaktHigh (  );
+            if (!isok) return false;
+
+            bool res = oneBit as bool;
+            res = !res;
+
+            this.data_output.Write ( res as int );
+
+            return this.TaktLow (  );
+        }
+
+        // -----------------------------------------------
+
+        public bool Send ( int data )
+        {
+            bool isok = this.clock_input.Read (  ) as bool;
+            if ( !isok ) return false;
+
+            isok = this.data_input.Read (  ) as bool;
+            if ( !isok ) return false;
+
+            isok = this.TransmissionOneBit ( 0 );
+            if (!isok) return false;
+
+            int currentParity = 1;
+
+            for (int position = 0; position < 8; position = position + 1)
+            {
+                int oneBit = (data >> position) & 1;
+
+                if (oneBit)
+                {
+                    if (currentParity) { currentParity = 0 }
+                    else { currentParity = 1 }
+                }
+
+                isok = this.TransmissionOneBit ( oneBit );
+                if (!isok) return false;
+            }
+
+            isok = this.TransmissionOneBit ( currentParity );
+            if (!isok) return false;
+
+            isok = this.TransmissionOneBit ( 1 );
+            if (!isok) return false;
+
+            this.InitialState (  );
+
+            return true;
+        }
+
+        // -----------------------------------------------
+
+        #endregion methods
+
+        // -----------------------------------------------
+
+    }
+
+}
