@@ -165,7 +165,7 @@ namespace "Ps2"
             bool isok = this.TaktHigh (  );
             if (!isok) return 2;
 
-            int result = this.data_input.Read (  );
+            bool result = this.data_input.Read (  );
 
             isok = this.TaktLow (  );
             if (!isok) return 2;
