@@ -230,6 +230,30 @@ namespace "Ps2"
 
         // -----------------------------------------------
 
+        public bool Send ( string msg )
+        {
+            this.rcc.WaitInMicroSeconds ( 10000 );
+
+            this.Send ( 0x5 );
+
+            ByteArray array = msg as ByteArray;
+            this.rcc.WaitInMicroSeconds ( 10000 );
+
+            this.Send ( array.Size );
+
+            for (int i = 0; i < array.Size; i = i + 1)
+            {
+                this.rcc.WaitInMicroSeconds ( 10000 );
+                //Wait.InSeconds ( 1 );
+
+                this.Send ( array.Data[i] );
+            }
+
+            return true;
+        }
+
+        // -----------------------------------------------
+
         #endregion methods
 
         // -----------------------------------------------
