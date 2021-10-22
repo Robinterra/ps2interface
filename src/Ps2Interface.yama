@@ -137,11 +137,11 @@ namespace "Ps2"
             bool isok = this.clock_input.Read (  ) as bool;
             if ( !isok ) return false;
 
-            this.rcc.WaitInMicroSeconds ( 20 );
+            this.rcc.WaitInMicroSeconds ( 10 );
 
             this.clock_output.Write ( 1 );
 
-            this.rcc.WaitInMicroSeconds ( 20 );
+            this.rcc.WaitInMicroSeconds ( 10 );
 
             return true;
         }
@@ -150,11 +150,11 @@ namespace "Ps2"
 
         private bool TaktHigh (  )
         {
-            this.rcc.WaitInMicroSeconds ( 20 );
+            this.rcc.WaitInMicroSeconds ( 10 );
 
             this.clock_output.Write ( 0 );
 
-            this.rcc.WaitInMicroSeconds ( 20 );
+            this.rcc.WaitInMicroSeconds ( 10 );
 
             this.clock_input.Read (  );
         }
