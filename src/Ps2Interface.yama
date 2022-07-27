@@ -56,10 +56,10 @@ namespace "Ps2"
 
         public bool IsRequestToSendFromHost (  )
         {
-            bool isok = this.clock_input.Read (  ) as bool;
+            bool isok = (this.clock_input.Read (  )) as bool;
             if (!isok) return false;
 
-            isok = this.data_input.Read (  ) as bool;
+            isok = (this.data_input.Read (  )) as bool;
             return !isok;
         }
 
@@ -85,10 +85,10 @@ namespace "Ps2"
 
         public int Receive (  )
         {
-            bool isok = this.clock_input.Read (  ) as bool;
+            bool isok = (this.clock_input.Read (  )) as bool;
             if ( !isok ) return false;
 
-            isok = this.data_input.Read (  ) as bool;
+            isok = (this.data_input.Read (  )) as bool;
             if ( isok ) return false;
 
             int result = 0;
@@ -134,7 +134,7 @@ namespace "Ps2"
 
         private bool TaktLow (  )
         {
-            bool isok = this.clock_input.Read (  ) as bool;
+            bool isok = (this.clock_input.Read (  )) as bool;
             if ( !isok ) return false;
 
             this.rcc.WaitInMicroSeconds ( 10 );
@@ -193,10 +193,10 @@ namespace "Ps2"
 
         public bool Send ( int data )
         {
-            bool isok = this.clock_input.Read (  ) as bool;
+            bool isok = (this.clock_input.Read (  )) as bool;
             if ( !isok ) return false;
 
-            isok = this.data_input.Read (  ) as bool;
+            isok = (this.data_input.Read (  )) as bool;
             if ( !isok ) return false;
 
             isok = this.TransmissionOneBit ( 0 );
